@@ -1,4 +1,6 @@
-class Strassen {
+package src;
+
+class Driver {
     public static void main(String[] args) {
         int testcode = Integer.parseInt(args[0]);
         int dimension = Integer.parseInt(args[1]);
