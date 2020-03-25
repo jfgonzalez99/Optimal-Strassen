@@ -24,6 +24,18 @@ class Matrix {
         }
     }
 
+    // private Matrix[] split() {
+    //     Matrix[] submatrices = new Matrix[4];
+    //     for (int i = 0; i < 4; i++) {
+    //         submatrices[i] = new Matrix(dimension / 2, "submatrix");
+
+    //     }
+    //     return submatrices;
+    // }
+
+    /**
+     * Prints matrix
+     */
     public void printMatrix() {
         for (int i = 0; i < dimension; i++) {
             for (int j = 0; j < dimension - 1; j++) {
