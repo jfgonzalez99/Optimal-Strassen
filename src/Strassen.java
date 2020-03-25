@@ -1,5 +1,4 @@
 package src;
-import src.Matrix;
 
 class Strassen {
     public static void main(String[] args) {
@@ -9,5 +8,17 @@ class Strassen {
         
         Matrix m = new Matrix(dimension, inputFile);
         m.printMatrix();
+    }
+
+    public int[][] twoDimMult(Matrix A, Matrix B) {
+        int[][] a = A.m;
+        int[][] C = {{}};
+        
+    }
+
+    public int[][] traditional(Matrix A, Matrix B) {
+        if (A.dimension == 2) {
+            return twoDimMult(A,B);
+        }
     }
 }
