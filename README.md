@@ -1,4 +1,4 @@
-# Optimal-Strassen
+# Optimal Strassen
 
 *Justin Gonzalez*
 
