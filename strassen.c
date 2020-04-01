@@ -47,8 +47,18 @@ int main(int argc, char *argv[]) {
         }
         fclose(f);
 
+        // C = strassen(A, B, dimension);
+        // printDiagonal(C, dimension);
+        printMatrix(A, dimension);
+        printf("\n");
+        printMatrix(B, dimension);
+        printf("\n");
+
+        C = tradMult(A, B, dimension);
+        printMatrix(C, dimension);
+        printf("\n");
         C = strassen(A, B, dimension);
-        printDiagonal(C, dimension);
+        printMatrix(C, dimension);
     }
 
     // Generate random matrices
@@ -59,16 +69,27 @@ int main(int argc, char *argv[]) {
             B[i] = rand() % 3;
         }
 
-        // Time how long strassen takes
-        clock_t start, end;
-        start = clock();
-        C = strassen(A, B, dimension);
-        end = clock();
-        printDiagonal(C, dimension);
+        // // Time how long strassen takes
+        // clock_t start, end;
+        // start = clock();
+        // C = strassen(A, B, dimension);
+        // end = clock();
+        // printDiagonal(C, dimension);
+        // printf("\n");
+
+        // double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
+        // printf("%f seconds\n", time_taken);
+
+        printMatrix(A, dimension);
+        printf("\n");
+        printMatrix(B, dimension);
         printf("\n");
 
-        double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-        printf("%f seconds\n", time_taken);
+        C = tradMult(A, B, dimension);
+        printMatrix(C, dimension);
+        printf("\n");
+        C = strassen(A, B, dimension);
+        printMatrix(C, dimension);
     }
 }
 
@@ -88,8 +109,38 @@ int* tradMult(int *X, int *Y, int n) {
 }
 
 int* strassen(int *X, int *Y, int n) {
-    if (n < N0) {
+    // if (n < N0) {
+    //     return tradMult(X, Y, n);
+    // }
+    if (n == 2) {
         return tradMult(X, Y, n);
+    }
+
+    // Add padding to odd matrices
+    int padded = 0;
+    if (n % 2 == 1) {
+        padded = 1;
+        int *M = malloc((n + 1) * (n + 1) * sizeof(int));
+        int *N = malloc((n + 1) * (n + 1) * sizeof(int));
+
+        int i, j;
+        for (i = 0; i < n; i++) {
+            for (j = 0; j < n; j++) {
+                M[(n + 1) * i + j] = X[n * i + j];
+                N[(n + 1) * i + j] = Y[n * i + j];
+            }
+            M[(n + 1) * i + n] = 0;
+            N[(n + 1) * i + n] = 0;
+        }
+        int lastRow = (n + 1) * n;
+        for (i = 0; i < n + 1; i++) {
+            M[lastRow + i] = 0;
+            N[lastRow + i] = 0;
+        }
+
+        X = M;
+        Y = N;
+        n++;
     }
 
     int m = n / 2;
@@ -106,6 +157,7 @@ int* strassen(int *X, int *Y, int n) {
     int *G = malloc(mS * sizeof(int));
     int *H = malloc(mS * sizeof(int));
 
+    int i, j;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             // Top left
@@ -187,8 +239,8 @@ int* strassen(int *X, int *Y, int n) {
     int *Z4 = add(add(P5, P3, mS, 1),add(P1, P7, mS, 1), mS, 0);
 
     // Recombine to form output matrix
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
             if (i < m && j < m) {
                 Z[n * i + j] = Z1[m * i + j];
             }
@@ -210,7 +262,19 @@ int* strassen(int *X, int *Y, int n) {
     free(P3); free(P2); free(P1);
     free(H) ; free(G) ; free(F) ; free(E) ; 
     free(D) ; free(C) ; free(B) ; free(A) ;
-    
+
+    // Remove padding if it was added
+    if (padded == 1) {
+        int q = n - 1;
+        int *Q = malloc(q * q * sizeof(int));
+        for (i = 0; i < q; i++) {
+            for (j = 0; j < q; j++) {
+                Q[q * i + j] = Z[n * i + j];
+            }
+        }
+        return Q;
+    }
+
     return Z;
 }
 
