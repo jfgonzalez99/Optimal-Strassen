@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#define N0 122
 
-int dimension;
-int dSquared;
-int* tradMult(int *X, int *Y);
+int* tradMult(int *X, int *Y, int n);
 int* strassen(int *X, int *Y, int n);
 int* add(int *X, int *Y, int nSquared, int sub);
 void printMatrix(int *M, int n);
+void printDiagonal(int *M, int n);
 
 int main(int argc, char *argv[]) {
 	if (argc != 4) {
@@ -17,11 +17,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	int testcode = atoi(argv[1]);
-	dimension = atoi(argv[2]);
+	int dimension = atoi(argv[2]);
 	char *inputFile = argv[3];
 
     // Initialize "matrices"
-    dSquared = dimension * dimension;
+    int dSquared = dimension * dimension;
     int *A = malloc(dSquared * sizeof(int));
     int *B = malloc(dSquared * sizeof(int));
     int *C = malloc(dSquared * sizeof(int));
@@ -46,6 +46,9 @@ int main(int argc, char *argv[]) {
             i++;
         }
         fclose(f);
+
+        C = strassen(A, B, dimension);
+        printDiagonal(C, dimension);
     }
 
     // Generate random matrices
@@ -55,74 +58,75 @@ int main(int argc, char *argv[]) {
             A[i] = rand() % 3;
             B[i] = rand() % 3;
         }
-    }
 
-    printMatrix(A, dimension);
-    printf("\n");
-    printMatrix(B, dimension);
-    printf("\n");
-
-    int n0 =  122;
-    if (dimension < n0) {
-        C = tradMult(A, B);
-        printMatrix(C, dimension);
+        // Time how long strassen takes
+        clock_t start, end;
+        start = clock();
+        C = strassen(A, B, dimension);
+        end = clock();
+        printDiagonal(C, dimension);
         printf("\n");
-    }
 
-    C = strassen(A, B, dimension);
-    printMatrix(C, dimension);
+        double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
+        printf("%f seconds\n", time_taken);
+    }
 }
 
-int* tradMult(int *X, int *Y) {
-    int *Z = malloc(dSquared * sizeof(int));
+int* tradMult(int *X, int *Y, int n) {
+    int *Z = malloc(n * n * sizeof(int));
     int i, j, k;
-    for (i = 0; i < dimension; i++) {
-        for (j = 0; j < dimension; j++) {
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
             int sum = 0;
-            for (k = 0; k < dimension; k++) {
-               sum += X[dimension * i + k] * Y[dimension * k + j];
+            for (k = 0; k < n; k++) {
+               sum += X[n * i + k] * Y[n * k + j];
             }
-            Z[dimension * i + j] = sum;
+            Z[n * i + j] = sum;
         }
     }
     return Z;
 }
 
 int* strassen(int *X, int *Y, int n) {
-    if (n == 2) {
-        return tradMult(X,Y);
+    if (n < N0) {
+        return tradMult(X, Y, n);
     }
 
     int m = n / 2;
     int mS = m * m;
     int *Z = malloc(n * n * sizeof(int));
 
-    int *A = malloc(m * sizeof(int));
-    int *B = malloc(m * sizeof(int));
-    int *C = malloc(m * sizeof(int));
-    int *D = malloc(m * sizeof(int));
-    int *E = malloc(m * sizeof(int));
-    int *F = malloc(m * sizeof(int));
-    int *G = malloc(m * sizeof(int));
-    int *H = malloc(m * sizeof(int));
+    // Split the matrices into quarters
+    int *A = malloc(mS * sizeof(int));
+    int *B = malloc(mS * sizeof(int));
+    int *C = malloc(mS * sizeof(int));
+    int *D = malloc(mS * sizeof(int));
+    int *E = malloc(mS * sizeof(int));
+    int *F = malloc(mS * sizeof(int));
+    int *G = malloc(mS * sizeof(int));
+    int *H = malloc(mS * sizeof(int));
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
+            // Top left
             if (i < m && j < m) {
                 A[m * i + j] = X[n * i + j];
                 E[m * i + j] = Y[n * i + j];
             }
+            // Top right
             else if (i < m && j >= m) {
                 B[m * i + (j - m)] = X[n * i + j];
                 F[m * i + (j - m)] = Y[n * i + j];
             }
+            // Bottom left
             else if (i >= m && j < m) {
                 C[m * (i - m) + j] = X[n * i + j];
                 G[m * (i - m) + j] = Y[n * i + j];
             }
+            // Bottom right
             else if (i >= m && j >= m) {
-                D[m * (i - m) + j - m] = X[n * i + j];
-                H[m * (i - m) + j - m] = Y[n * i + j];
+                D[m * (i - m) + (j - m)] = X[n * i + j];
+                H[m * (i - m) + (j - m)] = Y[n * i + j];
             }
         }
     }
@@ -158,20 +162,20 @@ int* strassen(int *X, int *Y, int n) {
     // (A-C)(E+F)
     int *P7 = strassen(add(A, C, mS, 1), add(E, F, mS, 0), m);
 
-    printMatrix(Z1, m);
-    printf("\n");
-    printMatrix(Z1, m);
-    printf("\n");
-    printMatrix(Z1, m);
-    printf("\n");
-    printMatrix(Z1, m);
-    printf("\n");
-    printMatrix(Z1, m);
-    printf("\n");
-    printMatrix(Z1, m);
-    printf("\n");
-    printMatrix(Z1, m);
-    printf("\n");
+    // printMatrix(P1, m);
+    // printf("\n");
+    // printMatrix(P2, m);
+    // printf("\n");
+    // printMatrix(P3, m);
+    // printf("\n");
+    // printMatrix(P4, m);
+    // printf("\n");
+    // printMatrix(P5, m);
+    // printf("\n");
+    // printMatrix(P6, m);
+    // printf("\n");
+    // printMatrix(P7, m);
+    // printf("\n");
 
     // AE + BG
     int *Z1 = add(P4, add(P5, add(P6, P2, mS, 1), mS, 0), mS, 0);
@@ -182,6 +186,7 @@ int* strassen(int *X, int *Y, int n) {
     // CF + DH
     int *Z4 = add(add(P5, P3, mS, 1),add(P1, P7, mS, 1), mS, 0);
 
+    // Recombine to form output matrix
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             if (i < m && j < m) {
@@ -198,10 +203,18 @@ int* strassen(int *X, int *Y, int n) {
             }
         }
     }
+
+    // Free memory
+    free(Z4); free(Z3); free(Z2); free(Z1);
+    free(P7); free(P6); free(P5); free(P4);
+    free(P3); free(P2); free(P1);
+    free(H) ; free(G) ; free(F) ; free(E) ; 
+    free(D) ; free(C) ; free(B) ; free(A) ;
     
     return Z;
 }
 
+// Adds (or subtracts) two matrices
 int* add(int *X, int *Y, int nSquared, int sub) {
     int *Z = malloc(nSquared * sizeof(int));
     if (sub == 1) {
@@ -216,11 +229,19 @@ int* add(int *X, int *Y, int nSquared, int sub) {
     return Z;
 }
 
+// Prints a matrix
 void printMatrix(int *M, int n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n - 1; j++) {
             printf("%d ", M[n * i + j]);
         }
         printf("%d\n", M[n * (i + 1) - 1]);
+    }
+}
+
+// Prints the diagonal of a matrix
+void printDiagonal(int *M, int n) {
+    for (int i = 0; i < n; i++) {
+        printf("%d\n", M[(n + 1) * i]);
     }
 }
