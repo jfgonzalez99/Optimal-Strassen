@@ -1,5 +1,5 @@
-all:
-	javac src/Strassen.java && javac src/Matrix.java && chmod +x strassen
+strassen: strassen.c
+	gcc -o strassen strassen.c
 
 clean:
-	rm -f src/Strassen.class && rm -f src/Matrix.class
+	-rm -f strassen
