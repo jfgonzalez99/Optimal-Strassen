@@ -4,7 +4,7 @@
 #include <string.h>
 #include <math.h>
 
-int n0 = 2;
+int n0 = 46;
 int* tradMult(int *X, int *Y, int n);
 int* strassen(int *X, int *Y, int n);
 int* add(int *X, int *Y, int nSquared, int sub);
@@ -53,17 +53,8 @@ int main(int argc, char *argv[]) {
         }
         fclose(f);
 
-        printMatrix(A, dimension); 
-        printf("\n");
-        printMatrix(B, dimension);
-        printf("\n");
-
         C = strassen(A, B, dimension);
-        // printDiagonal(C, dimension);
-
-        printMatrix(tradMult(A, B, dimension), dimension);
-        printf("\n");
-        printMatrix(C, dimension);
+        printDiagonal(C, dimension);
     }
 
     // Generate random matrices
@@ -78,37 +69,29 @@ int main(int argc, char *argv[]) {
             B[i] = rand() % 3;
         }
 
-        printMatrix(A, dimension); 
-        printf("\n");
-        printMatrix(B, dimension);
-        printf("\n");
-
         // Time how long strassen takes
-        // clock_t start, end;
-        // start = clock();
+        clock_t start, end;
+        start = clock();
         C = strassen(A, B, dimension);
-        // end = clock();
+        end = clock();
         // printDiagonal(C, dimension);
-        // printf("\n");
-
-        // double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-        // printf("%f seconds\n", time_taken);
-
-        printMatrix(tradMult(A, B, dimension), dimension);
         printf("\n");
-        printMatrix(C, dimension);
+
+        double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
+        printf("%f seconds\n", time_taken);
     }
 
+    // Test multiple values of n0
     if (testcode == 2) {
         int i, j, k, n, nSquared;
         clock_t start, end;
         double time_trad, time_strassen;
-        int trials = 30;
+        int trials = 1;
         
         printf("n0\ttime_trad\ttime_strassen\n");
-        // Test multiple values of n0
-        for (i = 1; i < 51; i++) {
-            n0 = i;
+        
+        for (i = 1; i < 11; i++) {
+            n0 = 100 * i;
             n = n0 * 2;
             nSquared = n * n;
 
@@ -144,16 +127,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // See where pure Strassen begins to beat traditional
     if (testcode == 3) {
-        int i, j, k, n, nSquared;
+        int i, j, n, nSquared;
         clock_t start, end;
         double time_trad, time_strassen;
         
-        printf("n\tavg_time_trad\tavg_time_strassen\n");
+        printf("n\ttime_trad\ttime_strassen\n");
         n0 = 2;
-        // See where Strassen begins to beat traditional
-        for (i = 5; i < 21; i++) {
-            n = 512 * i;
+        
+        for (i = 1; i < 21; i++) {
+            n = 2048 + 32 * i;
             nSquared = n * n;
             A = malloc(nSquared * sizeof(int));
             B = malloc(nSquared * sizeof(int));
@@ -162,31 +146,31 @@ int main(int argc, char *argv[]) {
             time_trad = 0;
             time_strassen = 0;
 
-            for (j = 0; j < 1; j++) {
-                // Generate random matrices
-                for (k = 0; k < nSquared; k++) {
-                    A[k] = rand() % 3;
-                    B[k] = rand() % 3;
-                }
-
-                // Time how long traditional algorithm takes
-                start = clock();
-                C = tradMult(A, B, n);
-                end = clock();
-                time_trad += (double)(end - start) / CLOCKS_PER_SEC;
-
-                // Time how long Strassen takes
-                start = clock();
-                C = strassen(A, B, n);
-                end = clock();
-                time_strassen += (double)(end - start) / CLOCKS_PER_SEC;        
+            // Generate random matrices
+            for (j = 0; j < nSquared; j++) {
+                A[j] = rand() % 3;
+                B[j] = rand() % 3;
             }
+
+            // Time how long traditional algorithm takes
+            start = clock();
+            C = tradMult(A, B, n);
+            end = clock();
+            time_trad = (double)(end - start) / CLOCKS_PER_SEC;
+
+            // Time how long Strassen takes
+            start = clock();
+            C = strassen(A, B, n);
+            end = clock();
+            time_strassen = (double)(end - start) / CLOCKS_PER_SEC;        
+            
             free(C); free(B); free(A);
             printf("%d\t%f\t%f\n", n, time_trad, time_strassen);
             n = n * 2;
         }
     }
 
+    // Perturb n0 and see how run time changes
     if (testcode == 4) {
         int i, j, k;
         clock_t start, end;
@@ -275,15 +259,6 @@ int main(int argc, char *argv[]) {
     }
 }
 
-int* twoDMult (int *X, int *Y) {
-    int *Z = malloc(4 * sizeof(int));
-    Z[0] = X[0]*Y[0] + X[1]*Y[2];
-    Z[1] = X[0]*Y[1] + X[1]*Y[3];
-    Z[2] = X[2]*Y[0] + X[3]*Y[2];
-    Z[3] = X[2]*Y[1] + X[3]*Y[3];
-    return Z;
-}
-
 int* tradMult(int *X, int *Y, int n) {
     int *Z = malloc(n * n * sizeof(int));
     int i, j, k;
@@ -300,7 +275,7 @@ int* tradMult(int *X, int *Y, int n) {
 }
 
 int* strassen(int *X, int *Y, int n) {
-    if (n <= n0) {
+    if (n < n0) {
         return tradMult(X, Y, n);
     }
 
@@ -331,13 +306,9 @@ int* strassen(int *X, int *Y, int n) {
         Y = malloc(n1Squared * sizeof(int));
         X = M;
         Y = N;
+
         n++;
     }
-
-    printMatrix(X, n);
-    printf("\n");
-    printMatrix(Y, n);
-    printf("\n");
 
     int m = n / 2;
     int mS = m * m;
